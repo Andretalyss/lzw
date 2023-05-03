@@ -11,7 +11,7 @@ def read_message():
     return messagem
 
 def dicionario_arranque(message):
-    codigo = 1
+    codigo = 0
     for caract in message:
         if caract not in dicionario:
             dicionario[f"{caract}"] = codigo
@@ -32,6 +32,10 @@ def codificacao_lzw(message, codigo):
                 if s == i:
                     saida.append(str(dicionario[i]))
                     break
+            
+            dicionario[f"{s}EOF"] = aux_cod
+            aux_cod+=1
+
             break
         else:    
             c = message[caract+1]  
@@ -61,11 +65,17 @@ def codificacao_lzw(message, codigo):
 def decodifica_lzw(dicionario_inicial, codigo_comprimido, codigo):
     saida_anterior = ""
     saida_atual = ""
-    msg_decode = []
+    msg_decode = []     
     flag = 0
-    for i in range(len(codigo_comprimido)):
-        c = codigo_comprimido[i]
+    for i in range(len(codigo_comprimido)+1):
         s = saida_anterior
+        if i >= len(cod_comprimido):
+            dicionario_inicial[f"{s}EOF"] = codigo
+            codigo +=1
+            break
+        else:
+            c = codigo_comprimido[i]
+    
         for k in dicionario_inicial:
             if int(dicionario_inicial[k]) == int(c):
                 saida_atual = k
@@ -80,12 +90,13 @@ def decodifica_lzw(dicionario_inicial, codigo_comprimido, codigo):
             saida_atual = add
             msg_decode.append(saida_atual)
             codigo+=1
+            saida_anterior = saida_atual
             continue
         
         flag = 0
         saida_anterior = saida_atual
         if s != "":
-            seq = [s, saida_atual]
+            seq = [s, saida_atual[0]]
             seq = ''.join(seq)
             dicionario_inicial[f"{seq}"] = codigo
             codigo +=1 
