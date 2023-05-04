@@ -1,111 +1,82 @@
-dicionario = {}
-dicionario_inicial = {}
-message = ""
+alfabeto_ascii = {}
 
-def read_message():
+def ascii_initialize(alfabeto_ascii):
+    codigo = 0
+    for x in range(32, 126):
+        # alfabeto_ascii[f"{format(ord(chr(x)), 'b')}"] = x
+        alfabeto_ascii[f"{chr(x)}"] = x
+        codigo = x
+    
+    return codigo
+
+def read_archive():
+    messagem = []
     arq = open("arquivo.txt", "r")
     for linha in arq:
-        messagem = linha
+        for i in linha:
+            # messagem.append(format(ord(i), 'b'))
+            messagem.append(i)
     arq.close()
 
     return messagem
 
-def dicionario_arranque(message):
-    codigo = 0
-    for caract in message:
-        if caract not in dicionario:
-            dicionario[f"{caract}"] = codigo
-            dicionario_inicial[f"{caract}"] = codigo
-            codigo +=1 
-
-    return codigo
-
-def codificacao_lzw(message, codigo):
-    saida = []
-    print(f"Messagem real: \n\t{message}")
-    aux_cod = codigo
-    s = message[0]
-    for caract in range(len(message)):                    
-        prox = caract+1
-        if prox >= len(message):
-            for i in dicionario:
+def lzw_enconder(messagem, alfabeto_ascii, codigo):
+    msg_comprimida = []
+    s = messagem[0]
+    for caractere in range(len(messagem)):
+        if (caractere+1) >= len(messagem):
+            for i in alfabeto_ascii:
                 if s == i:
-                    saida.append(str(dicionario[i]))
+                    msg_comprimida.append(alfabeto_ascii[i])
                     break
             
-            dicionario[f"{s}EOF"] = aux_cod
-            aux_cod+=1
-
+            alfabeto_ascii[f"{s}EOF"] = codigo
+            codigo +=1
             break
-        else:    
-            c = message[caract+1]  
-
-        sequencia = [s, c]
+        else:
+            c = messagem[caractere+1]
+        
+        sequencia = [s,c]
         sequencia = ''.join(sequencia)
 
-        if sequencia not in dicionario:
-            dicionario[f"{sequencia}"] = aux_cod
-            aux_cod +=1
+        if sequencia not in alfabeto_ascii:
+            alfabeto_ascii[f"{sequencia}"] = codigo
+            codigo += 1
         else:
             s = sequencia
             continue
-
-        for i in dicionario:
+            
+        for i in alfabeto_ascii:
             if s == i:
-                saida.append(str(dicionario[i]))
+                msg_comprimida.append(alfabeto_ascii[i])
                 break
 
         s = c
 
-    print(f"\n{saida}")
-    print(f"\n{dicionario}")
-    return saida
-    
-            
-def decodifica_lzw(dicionario_inicial, codigo_comprimido, codigo):
-    saida_anterior = ""
-    saida_atual = ""
-    msg_decode = []     
-    flag = 0
-    for i in range(len(codigo_comprimido)+1):
-        s = saida_anterior
-        if i >= len(cod_comprimido):
-            dicionario_inicial[f"{s}EOF"] = codigo
-            codigo +=1
-            break
-        else:
-            c = codigo_comprimido[i]
-    
-        for k in dicionario_inicial:
-            if int(dicionario_inicial[k]) == int(c):
-                saida_atual = k
-                msg_decode.append(saida_atual)
-                flag = 1
-                break
-        
-        if not flag:
-            add = [s, s[0]]
-            add = ''.join(add)
-            dicionario_inicial[f"{add}"] = codigo
-            saida_atual = add
-            msg_decode.append(saida_atual)
-            codigo+=1
-            saida_anterior = saida_atual
-            continue
-        
-        flag = 0
-        saida_anterior = saida_atual
-        if s != "":
-            seq = [s, saida_atual[0]]
-            seq = ''.join(seq)
-            dicionario_inicial[f"{seq}"] = codigo
-            codigo +=1 
+    print(f"\n\n{alfabeto_ascii}\n\n")
+    return msg_comprimida
 
-    msg_decode = ''.join(msg_decode)
-    print(f"\nMessagem descodificada: \n\t{msg_decode}")
-    print(f"\n{dicionario_inicial}")
-   
-message = read_message()
-cod = dicionario_arranque(message)
-cod_comprimido = codificacao_lzw(message, cod)
-decodifica_lzw(dicionario_inicial, cod_comprimido, cod)
+def write_archive(msg_comprimida):
+    with open('arq-compress', 'w') as arquivo:
+        for i in msg_comprimida:
+            arquivo.write(str(bin(i)))
+
+codigo = ascii_initialize(alfabeto_ascii)
+print(alfabeto_ascii)
+messagem = read_archive()
+print(messagem)
+
+msg_comprimida = lzw_enconder(messagem, alfabeto_ascii, codigo)
+print(msg_comprimida)
+
+write_archive(msg_comprimida)
+
+# with open('arq-2', 'w') as arquivo:
+#     for i in messagem:
+#         arquivo.write(format(ord(i), 'b'))
+        
+
+
+
+
+
