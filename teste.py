@@ -1,12 +1,16 @@
 import bitarray
-import time
 from datetime import datetime
+import sys
+
+
+arg1 = sys.argv[1]
+arg2 = sys.argv[2]
 
 N_BITS = 9
 tam_dicionario = 2**N_BITS
 
 def ler_arquivo():
-    with open('arquivo-iso.txt', 'rb') as file:
+    with open(arg2, 'rb') as file:
         bytes_array = []
         byte = file.read(1)
         while byte:
@@ -17,38 +21,39 @@ def ler_arquivo():
     return bytes_array
 
 def lzw_compress(data):
-    dicionario = {chr(i): i for i in range(256)}
+    dicionario = {i.to_bytes(): i for i in range(256)}
     mensagem = bitarray.bitarray()
-    print(dicionario)
 
-    s = chr(data[0])
+    s = data[0]
     for char in range(len(data)):
         if (char+1) >= len(data):
             if s in dicionario:
-                mensagem.extend(bin(dicionario[s])[2:].zfill(N_BITS))
-                # mensagem.append(dicionario[s])
+                mensagem.extend(bin(ord(dicionario[s.to_bytes()]))[2:].zfill(N_BITS))
                 break
         else:
-            c = chr(data[char+1])
-
-        seq = s + c
+            c = data[char+1]
+        
+        seq = [s.to_bytes(), c.to_bytes()]
+        seq = ''.join(str(seq))
+        print(seq)
         if seq in dicionario:
             s = seq
         else:
-            mensagem.extend(bin(dicionario[s])[2:].zfill(N_BITS))
-            #mensagem.append(dicionario[s])
+            mensagem.extend(bin(dicionario[s.to_bytes()])[2:].zfill(N_BITS))
             if len(dicionario) == tam_dicionario:
                 s = c
                 continue
             else:
-                dicionario[seq] = len(dicionario)
-            
+                dicionario[len(dicionario)] = seq
+                
             s = c
-            
+    
+    print(dicionario)
     return mensagem
+    
 
 def lzw_decompress(data):
-    dicionario = {i: chr(i) for i in range(256)}
+    dicionario = {i: i.to_bytes() for i in range(256)}
     s = ""
     msg_descomprimida = []
     index = 0
@@ -73,11 +78,26 @@ def lzw_decompress(data):
                 s = saida_atual
                 continue
             else:
-                dicionario[len(dicionario)] = s + saida_atual[0]
+                dicionario[len(dicionario)] = s + saida_atual[0].to_bytes()
         
         s = saida_atual
     
     return msg_descomprimida
+
+def gera_arquivo_lzw(data):
+    with open('arquivo-comprimido.lzw', 'wb') as f:
+        f.write(data.tobytes())
+
+def gera_arquivo_descomprimido(data):
+    if arg1 == 'mp4':
+        with open('disco-descomprimido.mp4', 'wb') as f:
+            for b in data:
+                f.write(b)
+
+    elif arg1 == 'txt':
+        msg_nova = ''.join([chr(int.from_bytes(b, byteorder='little')) for b in data])
+        with open('arquivo-descomprimido.txt', 'w') as f:
+            f.write(msg_nova)
 
 msg = ler_arquivo()
 start = datetime.now()
@@ -85,28 +105,12 @@ msg_comprimida = lzw_compress(msg)
 end = datetime.now()
 print(f"Tempo de compressão = {end - start}")
 
-with open('arquivo.lzw', 'wb') as f:
-    f.write(msg_comprimida.tobytes())
+gera_arquivo_lzw(msg_comprimida)
 
 start = datetime.now()
 msg_descomprimida = lzw_decompress(msg_comprimida)
 end = datetime.now()
 print(f"Tempo de descompressão = {end - start}")
-msg_descomprimida = ''.join(msg_descomprimida)
 
-# with open('disco1.mp4', 'rb') as f:
-#     byte = f.read()
+gera_arquivo_descomprimido(msg_descomprimida)
 
-
-# bytes_desc = bytes(msg_descomprimida.encode())
-
-# print(len(bytes_desc))
-# print(len(byte))
-
-# for i in range(len(bytes_desc)):
-#     if byte[i] != bytes_desc[i]:
-#         print(byte[i])
-#         print(bytes_desc[i])
-
-with open('arquivo-novo.txt', 'w') as f:
-    f.write(msg_descomprimida)
