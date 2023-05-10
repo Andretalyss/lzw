@@ -2,11 +2,10 @@ import bitarray
 from datetime import datetime
 import sys
 
-
 arg1 = sys.argv[1]
 arg2 = sys.argv[2]
 
-N_BITS = 9
+N_BITS = 16
 tam_dicionario = 2**N_BITS
 
 def ler_arquivo():
@@ -24,31 +23,29 @@ def lzw_compress(data):
     dicionario = {i.to_bytes(): i for i in range(256)}
     mensagem = bitarray.bitarray()
 
-    s = data[0]
+    s = data[0].to_bytes()
     for char in range(len(data)):
         if (char+1) >= len(data):
             if s in dicionario:
-                mensagem.extend(bin(ord(dicionario[s.to_bytes()]))[2:].zfill(N_BITS))
+                mensagem.extend(bin(dicionario[s])[2:].zfill(N_BITS))
                 break
         else:
-            c = data[char+1]
+            c = data[char+1].to_bytes()
         
-        seq = [s.to_bytes(), c.to_bytes()]
+        seq = [s, c]
         seq = ''.join(str(seq))
-        print(seq)
-        if seq in dicionario:
-            s = seq
+        if seq.encode() in dicionario:
+            s = seq.encode()
         else:
-            mensagem.extend(bin(dicionario[s.to_bytes()])[2:].zfill(N_BITS))
+            mensagem.extend(bin(dicionario[s])[2:].zfill(N_BITS))
             if len(dicionario) == tam_dicionario:
                 s = c
                 continue
             else:
-                dicionario[len(dicionario)] = seq
+                dicionario[seq.encode()] = len(dicionario)
                 
             s = c
-    
-    print(dicionario)
+
     return mensagem
     
 
@@ -66,7 +63,7 @@ def lzw_decompress(data):
             saida_atual = dicionario[cod]
         elif cod >= len(dicionario):
             if s:
-                saida_atual = s + s[0]
+                saida_atual = s + s[0].to_bytes()
             else:
                 saida_atual = s
         else:
@@ -95,7 +92,7 @@ def gera_arquivo_descomprimido(data):
                 f.write(b)
 
     elif arg1 == 'txt':
-        msg_nova = ''.join([chr(int.from_bytes(b, byteorder='little')) for b in data])
+        msg_nova = ''.join([b.decode('utf-8') for b in data])
         with open('arquivo-descomprimido.txt', 'w') as f:
             f.write(msg_nova)
 
