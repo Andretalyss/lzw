@@ -1,12 +1,10 @@
 import bitarray
 from datetime import datetime
 import sys
+import os
 
 arg1 = sys.argv[1]
 arg2 = sys.argv[2]
-
-N_BITS = 16
-tam_dicionario = 2**N_BITS
 
 def ler_arquivo():
     with open(arg2, 'rb') as file:
@@ -33,7 +31,8 @@ def lzw_compress(data):
             c = data[char+1].to_bytes()
         
         seq = [s, c]
-        seq = ''.join(str(seq))
+        seq = ''.join([byte.decode('iso-8859-1') for byte in seq])
+
         if seq.encode() in dicionario:
             s = seq.encode()
         else:
@@ -96,18 +95,25 @@ def gera_arquivo_descomprimido(data):
         with open('arquivo-descomprimido.txt', 'w') as f:
             f.write(msg_nova)
 
-msg = ler_arquivo()
-start = datetime.now()
-msg_comprimida = lzw_compress(msg)
-end = datetime.now()
-print(f"Tempo de compressão = {end - start}")
 
-gera_arquivo_lzw(msg_comprimida)
+for i in range(9,17):
+    N_BITS = i
+    print(f"EXECUTANDO COM {N_BITS} bits - arquivo {arg1}\n")
+    tam_dicionario = 2**N_BITS
+    msg = ler_arquivo()
+    start = datetime.now()
+    msg_comprimida = lzw_compress(msg)
+    end = datetime.now()
+    print(f"Tempo de compressão = {end - start}")
 
-start = datetime.now()
-msg_descomprimida = lzw_decompress(msg_comprimida)
-end = datetime.now()
-print(f"Tempo de descompressão = {end - start}")
+    gera_arquivo_lzw(msg_comprimida)
+    tamanho_arquivo = os.path.getsize("arquivo-comprimido.lzw")
+    mb = tamanho_arquivo/(1024*1024)
+    print(f"Arquivo comprimido gerado com tamanho = {mb:.2f}mb")
 
-gera_arquivo_descomprimido(msg_descomprimida)
+    start = datetime.now()
+    msg_descomprimida = lzw_decompress(msg_comprimida)
+    end = datetime.now()
+    print(f"Tempo de descompressão = {end - start} \n")
+    gera_arquivo_descomprimido(msg_descomprimida)
 
