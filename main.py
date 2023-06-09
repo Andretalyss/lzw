@@ -133,4 +133,3 @@ for k in K:
     acertos.append(qtd_acertos)
     print("k = "+str(k)+", acertos: " + str(qtd_acertos))
     print(f"Tempo de execução = {end - start}\n")
-    
